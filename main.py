@@ -75,35 +75,23 @@ def token_required(_func=None, *, allowed_users=[], blocked_users=[]):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             # Verify if token is valid
-            active_ref = db.collection("activeAccounts")
-
             token = request.args.get("token", default=None, type=str)
             if token == None:
                 return error(f"Missing parameter: token", 401)
 
-            user_uid = None
-            ok = False
-            for toks in active_ref.stream():
-                toks_data = toks.to_dict()
-                token_matches = toks_data['token'] == token
-                if(token_matches):
-                    expiration_date = datetime.fromisoformat(toks_data['expiration'])
-                    present = datetime.now()
-                    if(expiration_date > present): # Token Is still valid
-                        user_uid = toks_data['userName']
-                        ok =True
-                    break
+            active_ref = db.collection("activeAccounts").where(u'token', u'==', token)
+            tok_data = None
+            for tok in active_ref.stream():
+                tok_data = tok.to_dict()
+                break
 
-            if not ok:
-                # Redirect to login?
-                return error(f"Invalid Token", 440)
-
-            # Verify if token is expired
-
-
+            expiration_date = datetime.fromisoformat(tok_data['expiration'])
+            present = datetime.now()
+            if(expiration_date < present): # Token Is still valid
+                return error(f"Expired Token", 440)
 
             # Verify access requirement
-            user_ref = db.collection("Users").document(user_uid).get()
+            user_ref = db.collection("Users").document(tok_data["userName"]).get()
             user_dict = user_ref.to_dict()
 
             for u_type in blocked_users:
@@ -122,6 +110,19 @@ def token_required(_func=None, *, allowed_users=[], blocked_users=[]):
     else:
         return decorator(_func)
 
+def user_from_token(token):
+    active_ref = db.collection("activeAccounts").where(u'token', u'==', token)
+    user_id = None
+    for u in active_ref.stream():
+        user_id = u.to_dict()['userName']
+        break
+
+    if user_id == None:
+        return None
+
+    user_ref = db.collection("Users").document(user_id).get()
+    return user_ref.to_dict()
+
 @app.route('/login')
 @param_required(params=['name', 'password'])
 def login():
@@ -129,27 +130,22 @@ def login():
     name = request.args.get('name', type=str)
     password = request.args.get('password', type=str)
 
-    users_ref = db.collection("Users")
+    users_ref = db.collection("Users").where(u'userName', u'==', name)
+    users_ref.where(u'password', u'==', password)
     working_user = None
     for user in users_ref.stream():
-        userdata = user.to_dict()
-        if(userdata['userName'] == name):
-            if(userdata['password'] == password):
-                working_user = user
-            break
+        working_user = user
+        break
 
     if working_user == None:
         return error("Invalid username or password")
 
     # If previous token exist, delete it and create new
     active_ref = db.collection("activeAccounts")
-
+    active_ref.where(u'userName', u'==', working_user.id)
     for toks in active_ref.stream():
-        toks_data = toks.to_dict()
-        if(toks_data['userName'] == working_user.id):
-            # Token already exists, delete it!
-            active_ref.document(toks.id).delete()
-            break
+        # Token already exists, delete it!
+        active_ref.document(toks.id).delete()
 
     # Create a new token for the user
     expiration = datetime.now() + timedelta(minutes=10)
@@ -203,11 +199,15 @@ def get_courses():
 def get_users():
     users = {}
     name_filter = request.args.get('name', default="", type=str)
+    token = request.args.get('token', type=str)
     users_ref = db.collection("Users")
+    requester = user_from_token(token)
     for doc in users_ref.stream():
         user_dict = doc.to_dict()
         if name_filter.lower() not in user_dict["userName"].lower():
             continue
+        if requester['type'] != "Admin":
+            del user_dict["password"]
         users[doc.id] = user_dict
     return users
 
