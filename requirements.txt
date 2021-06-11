@@ -1,4 +1,5 @@
 Flask
 flask-restful
 flask_cors
-gunicorn
+firebase_admin
+waitress

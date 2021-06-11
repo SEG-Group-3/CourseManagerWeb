@@ -17,9 +17,13 @@ Place it on the root folder and rename it to `keys.json`
 
 ### Running the app
 
-```
+```sh
 pip install -r requirements.txt
+
+
 flask run
+# or
+waitress-serve --port=8000 --host=localhost main:app
 ```
 
 Using a virtual enviroment with `virtualenv` is recommended
