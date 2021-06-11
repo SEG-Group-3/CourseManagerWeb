@@ -1,5 +1,10 @@
 # Course Manager API
 
+[Try it online](https://course-manager-server-seg-3.herokuapp.com/) (See examples bellow)
+
+![Heroku](https://heroku-badge.herokuapp.com/?app=course-manager-server-seg-3
+)
+
 ## How to run locally
 
 ### Setting up your keys
@@ -30,7 +35,7 @@ flask run
 
 Using a virtual enviroment with `virtualenv` is recommended
 
-## API
+## API Specification
 
 The list of wired urls and their functions
 
