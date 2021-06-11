@@ -23,7 +23,9 @@ pip install -r requirements.txt
 
 flask run
 # or
-waitress-serve --port=8000 --host=localhost main:app
+# waitress-serve --port=8000 --host=localhost main:app
+# or
+# heroku local web -f Procfile.local
 ```
 
 Using a virtual enviroment with `virtualenv` is recommended

@@ -1,3 +1,8 @@
+# Enviroment Variables
+import json
+import base64
+import os
+
 # Flask Stuff
 from flask import Flask
 from flask_restful import Api
@@ -8,9 +13,15 @@ import firebase_admin as fb
 from firebase_admin import credentials
 from firebase_admin import firestore
 from flask import request
+from google.auth.credentials import CredentialsWithQuotaProject
 
 # Initialize Firebase credentials
-cred = credentials.Certificate("./keys.json")
+if("AUTH" in os.environ): # Load authentication from enviroment
+    cred_string = base64.b64decode(os.environ["AUTH"]).decode('UTF-8')
+else: # Load authentication from local file
+    cred_string = open("keys.json").read()
+
+cred = credentials.Certificate(json.loads(cred_string))
 fb.initialize_app(cred)
 db = firestore.client()
 
