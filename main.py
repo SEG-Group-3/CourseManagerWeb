@@ -1,229 +1,89 @@
-# Token managing and creation
-from datetime import datetime, timedelta
-import secrets
-
-
-
-# Function Wrapping
-import functools
-
-# Enviroment Variables
-import json
-import base64
-import os
-
 # Flask Stuff
-from flask import Flask, wrappers
-from flask_restful import Api
+from flask import Flask, abort, jsonify
+from flask.globals import request
 from flask_cors import CORS
+from flask_httpauth import HTTPBasicAuth
+from flask_restful import Api
 
-# Firebase
-import firebase_admin as fb
-from firebase_admin import credentials
-from firebase_admin import firestore
-from flask import request
-from google.auth.credentials import CredentialsWithQuotaProject
+# Database
+import course_manager as c_manage
+import user_manager as u_manage
 
-# Initialize Firebase credentials
-if("AUTH" in os.environ): # Load authentication from enviroment
-    cred_string = base64.b64decode(os.environ["AUTH"]).decode('UTF-8')
-else: # Load authentication from local file
-    cred_string = open("keys.json").read()
-
-cred = credentials.Certificate(json.loads(cred_string))
-fb.initialize_app(cred)
-db = firestore.client()
-
+# Initialize Flask Application
 app = Flask(__name__)
+app.url_map.strict_slashes = False
 api = Api(app)
+auth = HTTPBasicAuth()
 CORS(app)
 
 
-def status(status_type="ok", message="No message Provided", code=501):
-    return {status_type: {
-            "message": message,
-            "code": code
-            }
-        }
+@auth.verify_password
+def verify_password(name, password=None):
 
-def error(message="No message Provided", code=501):
-    return status("error", message, code)
+    if u_manage.is_valid_credential(name, password):
+        return name
+    return None
 
-def ok(message="No message Provided"):
-    return status("success", message, 200)
 
-# Verifies that all parameters are passed before executing the function
-def param_required(_func=None, *, params=[]):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            for param in params:
-                arg_val = request.args.get(param, default=None, type=str)
-                if arg_val == None:
-                    return error(f"Missing parameter: {param}", 401)
-            return func(*args, **kwargs)
-        return wrapper
+@app.route("/whoami")
+def whoami():
+    return auth.username() if auth.username() is not None else "Not logged in"
 
-    if _func is None:
-        return decorator
-    else:
-        return decorator(_func)
 
-# Requires an auth token and an access requirement
-def token_required(_func=None, *, allowed_users=[], blocked_users=[]):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            # Verify if token is valid
-            token = request.args.get("token", default=None, type=str)
-            if token == None:
-                return error(f"Missing parameter: token", 401)
+@app.route("/users", methods=["GET", "POST"])
+@app.route("/users")
+def users():
+    if request.method == "GET":
+        return jsonify(u_manage.get_users())
+    if request.method == "POST":
+        u_manage.add_user(request.form)
+        return ("", 204)
 
-            active_ref = db.collection("activeAccounts").where(u'token', u'==', token)
-            tok_data = None
-            for tok in active_ref.stream():
-                tok_data = tok.to_dict()
-                break
 
-            expiration_date = datetime.fromisoformat(tok_data['expiration'])
-            present = datetime.now()
-            if(expiration_date < present): # Token Is still valid
-                return error(f"Expired Token", 440)
+@app.route("/users/<username>", methods=["GET", "PUT", "DELETE"])
+def user(username):
+    user_dict = u_manage.get_user(username)
+    if user_dict is None:
+        abort(404)
+    if request.method == "PUT":
+        user_dict.update(dict(request.form))
+        u_manage.update_user(user_dict)
+    if request.method == "DELETE":
+        u_manage.remove_user(username)
+        return ("", 204)
+    return jsonify(user_dict)
 
-            # Verify access requirement
-            user_ref = db.collection("Users").document(tok_data["userName"]).get()
-            user_dict = user_ref.to_dict()
 
-            for u_type in blocked_users:
-                if user_dict['type'] == u_type:
-                    return error(f"{user_dict['type']} is not allowed access", 401)
+@app.route("/courses", methods=["GET", "POST"])
+@app.route("/courses")
+def courses():
+    if request.method == "GET":
+        return jsonify(c_manage.get_courses())
+    if request.method == "POST":
+        c_manage.add_course(request.form)
+    return ("", 204)
 
-            for u_type in allowed_users:
-                if user_dict['type'] == u_type:
-                    return func(*args, **kwargs)
 
-            return func(*args, **kwargs)
-        return wrapper
+@app.route("/courses/<code>", methods=["GET", "PUT", "DELETE"])
+def course(code):
+    course_dict = c_manage.get_course(code)
+    if course_dict is None:
+        abort(404)
+    if request.method == "PUT":
+        course_dict.update(dict(request.form))
+        c_manage.update_course(course_dict)
+    if request.method == "DELETE":
+        c_manage.remove_course(code)
+        return ("", 204)
+    return jsonify(course_dict)
 
-    if _func is None:
-        return decorator
-    else:
-        return decorator(_func)
 
-def user_from_token(token):
-    active_ref = db.collection("activeAccounts").where(u'token', u'==', token)
-    user_id = None
-    for u in active_ref.stream():
-        user_id = u.to_dict()['userName']
-        break
-
-    if user_id == None:
-        return None
-
-    user_ref = db.collection("Users").document(user_id).get()
-    return user_ref.to_dict()
-
-@app.route('/login')
-@param_required(params=['name', 'password'])
-def login():
-    # Validate credentials
-    name = request.args.get('name', type=str)
-    password = request.args.get('password', type=str)
-
-    users_ref = db.collection("Users").where(u'userName', u'==', name)
-    users_ref.where(u'password', u'==', password)
-    working_user = None
-    for user in users_ref.stream():
-        working_user = user
-        break
-
-    if working_user == None:
-        return error("Invalid username or password")
-
-    # If previous token exist, delete it and create new
-    active_ref = db.collection("activeAccounts")
-    active_ref.where(u'userName', u'==', working_user.id)
-    for toks in active_ref.stream():
-        # Token already exists, delete it!
-        active_ref.document(toks.id).delete()
-
-    # Create a new token for the user
-    expiration = datetime.now() + timedelta(minutes=10)
-    expiration_str = expiration.isoformat()
-    token = secrets.token_urlsafe(32)
-    token_response = {'userName': working_user.id, 'token': token, 'expiration': expiration_str}
-    active_ref.add(token_response)
-    return ok(token_response)
-
-@app.route('/register')
-@param_required(params=['name', 'password'])
-def register():
-    name = request.args.get('name', type=str)
-    password = request.args.get('password', type=str)
-    usertype = request.args.get('type', default="Student", type=str)
-
-    user_ref = db.collection("Users")
-    user_ref.add({'userName': name, 'password': password, 'type': usertype})
-
-    return ok("Account created")
-
-@app.route('/')
+@app.route("/")
 def home():
-    return error("Page not implemented, go read the README.md!")
-
-@app.route('/sneed')
-def sneed():
-    return {"and" : "feed"}
+    if auth is not None:
+        return f"Welcome '{auth.username()}' !"
+    return "Welcome!"
 
 
-@app.route('/courses')
-def get_courses():
-    courses = {}
-
-    name_filter = request.args.get('name', default="", type=str)
-    code_filter = request.args.get('code', default="", type=str)
-
-    courses_ref = db.collection("Courses")
-    for doc in courses_ref.stream():
-        course_dict = doc.to_dict()
-        if name_filter.lower() not in course_dict["name"].lower():
-            continue
-        if code_filter.lower() not in course_dict["code"].lower():
-            continue
-        courses[doc.id] = course_dict
-
-    return courses
-
-@app.route('/users')
-@token_required(blocked_users=['Student'])
-def get_users():
-    users = {}
-    name_filter = request.args.get('name', default="", type=str)
-    token = request.args.get('token', type=str)
-    users_ref = db.collection("Users")
-    requester = user_from_token(token)
-    for doc in users_ref.stream():
-        user_dict = doc.to_dict()
-        if name_filter.lower() not in user_dict["userName"].lower():
-            continue
-        if requester['type'] != "Admin":
-            del user_dict["password"]
-        users[doc.id] = user_dict
-    return users
-
-
-@app.route('/courses/add')
-@param_required(params=['code', 'name', 'token'])
-@token_required(allowed_users=['Admin'])
-def add_course():
-    name = request.args.get('name', type=str)
-    code = request.args.get('code', type=str)
-
-    courses_ref = db.collection("Courses")
-
-    course_data_object = {'code': code, 'name': name}
-    courses_ref.add(course_data_object)
-    return ok("Course Added")
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
