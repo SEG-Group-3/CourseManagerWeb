@@ -1,6 +1,7 @@
 # Course Manager Web
 
 [Try it online](https://course-manager-server-seg-3.herokuapp.com/) 
+
 [Also checkout the android app](https://github.com/SEG-Group-3/CourseManager)
 
 ![Heroku](https://heroku-badge.herokuapp.com/?app=course-manager-server-seg-3
