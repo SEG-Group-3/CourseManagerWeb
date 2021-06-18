@@ -1,0 +1,25 @@
+{% extends "base.jinja" %} {% import "bootstrap/wtf.html" as wtf %} {% block
+page_content %}
+<div class="page-header">
+    <h1>Courses</h1>
+</div>
+
+<body>
+
+    <ul class="list-group">
+        {% for c in course_data %}
+        <a href="" class="list-group-item list-group-item-action">
+            <div class="card-body">
+                <h5 class="card-title">{{c['name']}}</h5>
+                <p class="card-text">{{c['code']}}</p>
+            </div>
+
+        </a>
+        {% endfor%}
+    </ul>
+
+
+
+
+</body>
+{% endblock %}

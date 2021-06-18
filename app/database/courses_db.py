@@ -1,10 +1,12 @@
-from models import Course
-from database import db
+from app.models import Course
+from . import db
 
 COURSES_REF = db.collection("Courses")
 CACHE = {}
 
 # Updates cache
+
+
 def on_snapshot(col_snapshot, changes, read_time):
     for change in changes:
         if change.type.name == "ADDED" or change.type.name == "MODIFIED":

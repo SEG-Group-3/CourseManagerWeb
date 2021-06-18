@@ -1,11 +1,13 @@
-from models import User
-from database import db
-
+from app.models import User
+from . import db
+from .. import login_manager
 
 USERS_REF = db.collection("Users")
 CACHE = {}
 
 # Updates cache
+
+
 def on_snapshot(col_snapshot, changes, read_time):
     for change in changes:
         if change.type.name == "ADDED" or change.type.name == "MODIFIED":
@@ -63,8 +65,8 @@ def remove_user(username):
         USERS_REF.document(doc_uid).delete()
 
 
-def is_valid_credential(username, password) -> bool:
+def is_valid_cred(username, password) -> bool:
     actual = get_user(username)
     if actual is None:
         return False
-    return actual.password == password
+    return actual["password"] == password
