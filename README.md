@@ -9,15 +9,26 @@
 
 Todos:
 
+- General
+  - [ ] Implement realtime updates with sockeio
 - Authentication
-  - [x] Have login requirements
-  - [ ] Require user access level for certain functions (eg: Delete, Modify, Create fields)
+  - [x] Login screen
+  - [ ] User type based interface
+  - [ ] Require user access level for certain functions (eg: Delete, Modify, Create, Subscribe)
 - Users
   - [x] See users
-  - [x] Create users
+  - [x] Edit users
+  - [ ] Create users
 - Courses
   - [x] See courses
-  - [x] Create courses
+  - [x] Edit courses
+  - [ ] Create courses
+- Students
+  - [ ] Enter/Leave courses
+  - [ ] Query search courses
+- Instructors
+  - [ ] Edit course schedule
+  - [ ] Assign/Unassign from courses
 
 ## How to run locally
 
