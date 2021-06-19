@@ -11,7 +11,7 @@
     <ul class="list-group">
         {% for c in course_data %}
 
-        <a href="edit/{{c['code']}}" class=" list-group-item">
+        <a href="/courses/edit/{{c['code']}}" class=" list-group-item">
             <div class="card-body">
                 <h5 class="card-title">{{c['name']}}</h5>
                 <p class="card-text">{{c['code']}}</p>
