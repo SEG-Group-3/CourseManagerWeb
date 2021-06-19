@@ -53,12 +53,14 @@ def add_course(course: dict):
     COURSES_REF.add(Course.validate(course))
 
 
-def update_course(course: dict):
+def update_course(course: dict) -> bool:
     doc_id = get_uid_from_code(course["code"])
     if doc_id is None:
-        return
+        return False
     course = Course.validate(course)
-    COURSES_REF.document(doc_id).update(course)
+    c_copy = {k: v for k, v in course.items() if v != None and v != ''}
+    COURSES_REF.document(doc_id).update(c_copy)
+    return True
 
 
 def remove_course(course_code):

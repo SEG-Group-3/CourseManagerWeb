@@ -1,5 +1,7 @@
-{% extends "base.jinja" %} {% import "bootstrap/wtf.html" as wtf %} {% block
-page_content %}
+{% extends "base.jinja" %} {% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+
 <div class="page-header">
     <h1>Users</h1>
 </div>
@@ -8,23 +10,14 @@ page_content %}
 
     <ul class="list-group">
         {% for u in user_data %}
-
-
-
-        <a href="" class="list-group-item list-group-item-action">
+        <a href="{{'edit/' + u['userName']}}" class="list-group-item list-group-item-action">
             <div class="card-body">
                 <h5 class="card-title">{{u['userName']}}</h5>
                 <p class="card-text">{{u['type']}}</p>
             </div>
         </a>
-
-
-
         {% endfor%}
     </ul>
-
-
-
-
 </body>
+
 {% endblock %}

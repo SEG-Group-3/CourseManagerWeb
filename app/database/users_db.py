@@ -1,3 +1,4 @@
+from os import truncate
 from app.models import User
 from . import db
 from .. import login_manager
@@ -46,17 +47,22 @@ def search_users(query):
     return results
 
 
-def add_user(user: dict):
-    # We should also check for repeated userNames
+def add_user(user: dict) -> bool:
+    if get_user(user['userName']) is not None:  # User already exists
+        return False
     USERS_REF.add(User.validate(user))
+    return True
 
 
-def update_user(user: dict):
+def update_user(user: dict) -> bool:
     doc_id = get_uid_from_username(user["userName"])
     if doc_id is None:
-        return
+        return False
     user = User.validate(user)
-    USERS_REF.document(doc_id).update(user)
+    # Remove none fields
+    u_copy = {k: v for k, v in user.items() if v != None and v != ''}
+    USERS_REF.document(doc_id).update(u_copy)
+    return True
 
 
 def remove_user(username):

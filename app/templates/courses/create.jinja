@@ -1,12 +1,20 @@
 {% extends "base.jinja" %} {% import "bootstrap/wtf.html" as wtf %}
 
+
+
 {% block title %}
-CM - Login
+CM - Course
 {% endblock %}
 
 {% block page_content %}
 <div class="page-header">
-  <h1>Login</h1>
+  <h1>
+    {% if course_data %}
+    Edit Course
+    {% else %}
+    Create course
+    {% endif %}
+  </h1>
 </div>
 <div class="col-md-4">
   {{ wtf.quick_form(form) }}</div>

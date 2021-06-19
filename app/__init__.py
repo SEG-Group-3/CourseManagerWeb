@@ -1,7 +1,6 @@
 from flask_cors.extension import CORS
 from flask_login.login_manager import LoginManager
 from flask_bootstrap import Bootstrap
-from app.forms.user_form import NameForm
 
 """
 Chat Server
@@ -34,19 +33,7 @@ def create_app(args=None):
 
     @app.route('/', methods=['GET', 'POST'])
     def index():
-        print(session)
-        form = NameForm()
-        if form.validate_on_submit():
-            old_name = session.get('name')
-            print("Old name: " + str(old_name))
-            print("New name: " + str(form.name.data))
-            if old_name is not None and old_name != form.name.data:
-                print("Changing name!")
-                flash(
-                    f'Looks like you have changed your name to {form.name.data}!')
-            session['name'] = form.name.data
-            return redirect(url_for('index'))
-        return render_template('index.jinja', form=form, name=session.get('name'))
+        return render_template('index.jinja')
 
     # socketio.init_app(app)
     return app
