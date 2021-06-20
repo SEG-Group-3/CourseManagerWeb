@@ -29,7 +29,10 @@ Todos:
 - Instructors
   - [ ] Edit course schedule
   - [ ] Assign/Unassign from courses
-
+- API
+  - [ ] Create delete auth tokens
+  - [x] Validate token/user-roles
+  
 ## How to run locally
 
 ### Setting up your keys
