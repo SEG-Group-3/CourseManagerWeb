@@ -12,6 +12,7 @@ def _get_token_data(token):
     for v in CACHE.values():
         if v["token"] == token:
             return v
+    return None
 
 
 def get_token_data(token):
@@ -20,10 +21,11 @@ def get_token_data(token):
         return None
 
     now = datetime.now()
-    expiration = tok["expiration"]
+    expiration = tok.get("expiration")
     is_valid = now < expiration
     if not is_valid:
         delete_token(token)
+        return None
 
     return tok
 

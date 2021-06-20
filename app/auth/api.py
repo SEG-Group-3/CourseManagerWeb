@@ -46,7 +46,7 @@ class LogoutR(Resource):
     @requires_token
     def post(self):
         dat = get_token_ctx_data()
-        token_db.delete_token(dat['token'])
+        token_db.delete_token(dat.get("token"))
         ret = {'message': "Goodbye"}
         return make_response(jsonify(ret), 404)
 
@@ -67,7 +67,7 @@ class WhoAmIR(Resource):
     def get(self):
         dat = get_token_ctx_data()
 
-        ret = {'message': "You are " + dat['userName']}
+        ret = {'message': "You are " + dat.get('userName')}
         return make_response(jsonify(ret), 200)
 
 
