@@ -1,8 +1,6 @@
 from difflib import get_close_matches
-from os import truncate
 from app.models import User
 from . import db
-from ..plugins import login_manager
 
 USERS_REF = db.collection("Users")
 CACHE = {}

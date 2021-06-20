@@ -6,5 +6,5 @@ from flask_restful import Api
 bootstrap = Bootstrap()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
-sio = SocketIO(logger=True, async_mode="gevent")
+sio = SocketIO(logger=True)
 api = Api()

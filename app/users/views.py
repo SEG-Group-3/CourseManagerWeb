@@ -3,8 +3,6 @@ from app.models import User
 from flask.helpers import flash
 from app.users.forms import EditUserForm
 from flask import Blueprint
-from flask import g
-from flask import json
 from flask.globals import request
 from flask.json import jsonify
 from flask.templating import render_template
