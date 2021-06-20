@@ -34,7 +34,9 @@ Course Manager
     </div>
   </div>
 </div>
-{% endblock %} {% block content %}
+{% endblock %}
+
+{% block content %}
 <div class="container">
   <!-- Flashed messages -->
   {% for message in get_flashed_messages() %}

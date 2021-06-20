@@ -2,23 +2,70 @@
 
 {% block page_content %}
 
+
+<template id="cardTemplate">
+    <a class=" list-group-item" id="cardInstance">
+        <div class="card-body">
+            <h5 class="card-title" id="cardTemplateTitle"></h5>
+            <p class="card-text" id="cardTemplateText"></p>
+        </div>
+
+    </a>
+</template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+
+<script>
+    let socket = io();
+    let lastQuerry = "";
+    window.onload = function () {
+
+        let courses_view = document.getElementById("courses_view");
+        let card_template = document.querySelector("#cardTemplate");
+        let search_bar = document.getElementById("search_bar")
+
+        function queryChanged() {
+            if (search_bar.value != lastQuerry) {
+                console.log("new query: " + search_bar.value);
+                lastQuerry = search_bar.value;
+                socket.emit('courses_search', { data: search_bar.value });
+            }
+        }
+        search_bar.onkeyup = queryChanged;
+        socket.on('courses_result', function (msg, cb) {
+            console.log("Server sent...");
+            while (courses_view.hasChildNodes())
+                courses_view.removeChild(courses_view.firstChild);
+
+            for (var i = 0; i < msg.data.length; i++) {
+
+                var clone = card_template.content.cloneNode(true)
+                clone.querySelector("#cardInstance").href = "/courses/edit/" + msg.data[i]["code"];
+                clone.querySelector("#cardTemplateTitle").textContent = msg.data[i]["name"];
+                clone.querySelector("#cardTemplateText").textContent = msg.data[i]["code"];
+                courses_view.appendChild(clone)
+            }
+            if (cb)
+                cb();
+        });
+
+        socket.emit('courses_search', { data: "" });
+    }
+</script>
+
+
 <div class="page-header">
     <h1>Courses</h1>
+    <div class="form-outline">
+        <input type="search" id="search_bar" class="form-control" placeholder="Search course by name/code/instructor"
+            aria-label="Search" />
+    </div>
 </div>
 
 <body>
 
-    <ul class="list-group">
-        {% for c in course_data %}
+    <ul class="list-group" id="courses_view">
 
-        <a href="/courses/edit/{{c['code']}}" class=" list-group-item">
-            <div class="card-body">
-                <h5 class="card-title">{{c['name']}}</h5>
-                <p class="card-text">{{c['code']}}</p>
-            </div>
-
-        </a>
-        {% endfor%}
     </ul>
 
 

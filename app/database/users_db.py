@@ -1,7 +1,8 @@
+from difflib import get_close_matches
 from os import truncate
 from app.models import User
 from . import db
-from .. import login_manager
+from ..plugins import login_manager
 
 USERS_REF = db.collection("Users")
 CACHE = {}
@@ -41,8 +42,15 @@ def get_users() -> dict:
 
 def search_users(query):
     results = {}
+    query = query.lower()
+
+    close_names = get_close_matches(
+        query, (n['userName'].lower() for n in CACHE.values()))
+
     for key, values in CACHE.items():
-        if query in values["userName"] or query in values["realName"]:
+        if values["userName"].lower() in close_names:
+            results[key] = values
+        if query in values["userName"]:
             results[key] = values
     return results
 

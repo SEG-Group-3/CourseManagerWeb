@@ -7,7 +7,8 @@ from flask import Blueprint
 from flask_login import login_user, logout_user, login_required
 from flask import render_template, redirect, request, url_for, flash
 from ..database import users_db
-from .. import login_manager
+from ..plugins import login_manager
+
 auth_bp = Blueprint('auth', __name__)
 
 
@@ -49,5 +50,4 @@ def logout():
 @auth_bp.route("/whoami")
 @login_required
 def whoami():
-
     return "Your name is: " + flask_login.current_user.data['userName']

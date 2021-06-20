@@ -1,11 +1,10 @@
 from app.models import Course
 from . import db
-
+from difflib import get_close_matches
 COURSES_REF = db.collection("Courses")
 CACHE = {}
 
 # Updates cache
-
 
 def on_snapshot(col_snapshot, changes, read_time):
     for change in changes:
@@ -38,8 +37,16 @@ def get_course(code):
 
 def search_courses(query):
     results = {}
+    query = query.lower()
+    close_names = get_close_matches(
+        query, (n['name'].lower() for n in CACHE.values()))
+    close_codes = get_close_matches(
+        query, (n['code'].lower() for n in CACHE.values()))
+
     for key, values in CACHE.items():
-        if query in values["code"] or query in values["name"]:
+        if values["code"].lower() in close_codes or values["name"].lower() in close_names:
+            results[key] = values
+        elif query in values["code"].lower() or query in values["name"].lower():
             results[key] = values
     return results
 
